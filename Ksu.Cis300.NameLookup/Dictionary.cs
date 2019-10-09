@@ -1,5 +1,6 @@
 ﻿/* Dictionary.cs
  * Author: Rod Howell
+ * Modified by David Apple
  */
 using System;
 using System.Collections.Generic;
@@ -23,10 +24,102 @@ namespace Ksu.Cis300.NameLookup
         /// </summary>
         private BinaryTreeNode<KeyValuePair<TKey, TValue>> _elements = null;
 
+
         /// <summary>
         /// Gets a drawing of the underlying binary search tree.
         /// </summary>
         public TreeForm Drawing => new TreeForm(_elements, 100);
+
+        /// <summary>
+        /// This method will return the minimum value given in 
+        /// the binary search tree
+        /// </summary>
+        /// <param name="t"> the tree we are finding the minimum value </param>
+        /// <param name="min"> the smallest key </param>
+        /// <returns></returns>
+        private static BinaryTreeNode<KeyValuePair<TKey, TValue>> RemoveMinimumKey(BinaryTreeNode<KeyValuePair<TKey, TValue>> t, out KeyValuePair<TKey, TValue> min)
+        {
+            if(t.LeftChild != null)
+            {
+                BinaryTreeNode<KeyValuePair<TKey, TValue>> newTree = new BinaryTreeNode<KeyValuePair<TKey, TValue>>(t.Data, RemoveMinimumKey(t.LeftChild, out min), t.RightChild);
+
+                return newTree;
+                    
+            }
+            else
+            {
+                min = t.Data;
+
+                return t.RightChild;
+            }
+        }
+        /// <summary>
+        /// this will remove the smallest value from the tree
+        /// </summary>
+        /// <param name="key"> the location where we are removing</param>
+        /// <param name="t"> the overall tree</param>
+        /// <param name="removed"> will be true if the value is removed</param>
+        /// <returns></returns>
+        private static BinaryTreeNode<KeyValuePair<TKey, TValue>> Remove(TKey key, BinaryTreeNode<KeyValuePair<TKey, TValue>> t, out bool removed)
+        {
+
+            if (t == null)
+            {
+                removed = false;
+            }
+            else
+            {
+                int compareTo = t.Data.Key.CompareTo(key);
+                if (compareTo < 0)
+                {
+                    BinaryTreeNode<KeyValuePair<TKey, TValue>> rightUpdate = Remove(key, t.RightChild, out removed);
+                    BinaryTreeNode<KeyValuePair<TKey, TValue>> newTree = new BinaryTreeNode<KeyValuePair<TKey, TValue>>(t.Data, t.LeftChild, rightUpdate);
+                    return newTree;
+                }
+                else if (compareTo > 0)
+                {
+                    BinaryTreeNode<KeyValuePair<TKey, TValue>> leftUpdate = Remove(key, t.LeftChild, out removed);
+                    BinaryTreeNode<KeyValuePair<TKey, TValue>> newTree = new BinaryTreeNode<KeyValuePair<TKey, TValue>>(t.Data, leftUpdate, t.RightChild);
+                    return newTree;
+                }
+                else
+                {
+                    removed = true;
+                    if (t.RightChild != null && t.LeftChild != null)
+                    {
+
+                        BinaryTreeNode<KeyValuePair<TKey, TValue>> updatedRight = RemoveMinimumKey(t.RightChild, out KeyValuePair<TKey, TValue> min);
+                        BinaryTreeNode<KeyValuePair<TKey, TValue>> newTree = new BinaryTreeNode<KeyValuePair<TKey, TValue>>(min, t.LeftChild, updatedRight);
+                        return newTree;
+                    }
+                    if (t.RightChild == null)
+                    {
+                        return t.LeftChild;
+                    }
+                    return t.RightChild;
+
+                }
+            }
+
+
+            
+            return null;
+        }
+
+        /// <summary>
+        /// will verify if a key exists, and if it does, 
+        /// will remove the key
+        /// </summary>
+        /// <param name="k"> key to be removed</param>
+        /// <returns></returns>
+        public bool Remove (TKey k)
+        {
+            CheckKey(k);
+            bool forOut;
+            _elements = Remove(k, _elements, out forOut);
+            return forOut;
+        }
+
 
         /// <summary>
         /// Checks to see if the given key is null, and if so, throws an
